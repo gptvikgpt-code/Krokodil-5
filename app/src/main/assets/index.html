@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><meta name="theme-color" content="#08090b"><title>Крокодил — 5 игроков</title>
+<style>
+:root{--bg:#08090b;--panel:#292a2d;--panel2:#17191d;--lime:#91ff70;--teal:#08b99e;--muted:#92969f;--line:#41444a}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#f4f5f7;font:16px system-ui,-apple-system, sans-serif;min-height:100vh}
+header{height:72px;display:flex;align-items:center;justify-content:space-between;padding:0 20px}
+h1{font-size:23px;font-weight:650;margin:0}h2{font-size:19px;margin:0 0 14px}main{padding:12px 18px 34px;max-width:620px;margin:auto}
+.panel{background:var(--panel);border:1px solid #42444a;border-radius:25px;padding:20px;margin:12px 0}
+.sub{color:var(--muted);font-size:14px}.lime{color:var(--lime)}label{display:block;color:#c8cbd1;margin:14px 0 7px}
+input{width:100%;background:#111318;border:1px solid #4b4e55;border-radius:12px;color:white;padding:13px 14px;font:inherit;outline:none}input:focus{border-color:var(--lime)}
+button{border:0;border-radius:14px;padding:14px 17px;font:600 16px system-ui;cursor:pointer}
+.primary{background:var(--teal);color:#fff}.secondary{background:#3a3c41;color:#fff;border:1px solid #55585e}.limebtn{background:var(--lime);color:#10130f}
+.row{display:flex;gap:10px}.row>*{flex:1}.players{display:grid;gap:9px}.player{display:flex;align-items:center;gap:12px;background:var(--panel2);padding:10px 12px;border-radius:14px}.num{color:var(--lime);font-weight:700;width:25px}.score{margin-left:auto;color:var(--lime);font-variant-numeric:tabular-nums}
+.bigtime{font-size:52px;font-weight:750;letter-spacing:-2px;text-align:center;color:var(--lime);margin:8px}.word{font-size:32px;font-weight:750;text-align:center;margin:24px 0;min-height:45px}.center{text-align:center}.hidden{display:none!important}.topline{display:flex;justify-content:space-between;align-items:center;color:var(--muted)}.pill{border:1px solid #555;border-radius:30px;padding:6px 12px;font-size:13px}.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}.actions button:first-child{grid-column:span 2}.hint{font-size:13px;color:var(--muted);text-align:center;margin-top:12px}
+</style></head><body>
+<header><h1>🐊 <span class="lime">КРОКОДИЛ</span></h1><span class="pill">5 игроков</span></header>
+<main>
+<section id="menu">
+<div class="panel"><div class="topline"><h2>Новая игра</h2><span class="lime">● готово</span></div><p class="sub">Настройте игроков и время на один ход.</p>
+<div id="nameFields"></div>
+<label for="duration">Время на ход (секунды)</label><input id="duration" type="number" min="10" max="300" value="60">
+<div class="row" style="margin-top:18px"><button class="primary" onclick="startGame()">Начать игру</button><button class="secondary" onclick="resetScores()">Сбросить счёт</button></div>
+</div>
+<div class="panel"><h2>Как играть</h2><p class="sub">Передайте телефон водящему. Он нажимает «Показать слово», запоминает его и прячет экран. Объяснять можно только жестами — без слов и звуков. Остальные угадывают.</p></div>
+</section>
+<section id="game" class="hidden">
+<div class="panel">
+<div class="topline"><span id="roundLabel">Ход 1 из 5</span><span class="pill" id="playerLabel">Игрок 1</span></div>
+<div class="bigtime" id="timer">01:00</div><div class="center sub">ОСТАЛОСЬ ВРЕМЕНИ</div>
+<div id="word" class="word">••••••••</div>
+<div class="center"><button class="limebtn" id="reveal" onclick="revealWord()">Показать слово</button><button class="secondary hidden" id="hide" onclick="hideWord()">Спрятать слово</button></div>
+<p class="hint" id="category">Слово увидит только объясняющий</p>
+<div class="actions" style="margin-top:20px"><button class="primary" onclick="correct()">Угадали! +1</button><button class="secondary" onclick="skip()">Пропустить</button><button class="secondary" onclick="endTurn()">Завершить ход</button></div>
+</div>
+<div class="panel"><h2>Счёт</h2><div id="scoreList" class="players"></div></div>
+<button class="secondary" style="width:100%" onclick="backToMenu()">В меню</button>
+</section>
+<section id="finish" class="hidden"><div class="panel center"><div style="font-size:46px">🏆</div><h2>Игра завершена!</h2><div id="winner" class="word"></div><div id="finalScores" class="players"></div><button class="primary" style="width:100%;margin-top:18px" onclick="backToMenu()">Новая игра</button></div></section>
+</main>
+<script>
+const defaults=['Игрок 1','Игрок 2','Игрок 3','Игрок 4','Игрок 5'];
+const words=[
+['Кот','Животное'],['Собака','Животное'],['Слон','Животное'],['Обезьяна','Животное'],['Пингвин','Животное'],['Заяц','Животное'],['Лошадь','Животное'],['Черепаха','Животное'],['Лягушка','Животное'],['Бабочка','Животное'],
+['Яблоко','Предмет или еда'],['Банан','Предмет или еда'],['Мороженое','Предмет или еда'],['Пицца','Предмет или еда'],['Зубная щётка','Предмет или еда'],['Зонт','Предмет или еда'],['Телефон','Предмет или еда'],['Подушка','Предмет или еда'],['Очки','Предмет или еда'],['Мяч','Предмет или еда'],
+['Плавать','Действие'],['Танцевать','Действие'],['Спать','Действие'],['Чихать','Действие'],['Чистить зубы','Действие'],['Ехать на велосипеде','Действие'],['Готовить','Действие'],['Фотографировать','Действие'],['Петь','Действие'],['Ловить рыбу','Действие'],
+['Самолёт','Простое'],['Ракета','Простое'],['Снеговик','Простое'],['Радуга','Простое'],['Пожарный','Профессия'],['Врач','Профессия'],['Пират','Персонаж'],['Робот','Персонаж'],['Клоун','Персонаж'],['Король','Персонаж']
+];
+let players=[],scores=[0,0,0,0,0],turn=0,remaining=60,interval=null,current=null,shown=false,used=[];
+function init(){document.getElementById('nameFields').innerHTML=defaults.map((n,i)=>'<label>Имя игрока '+(i+1)+'</label><input maxlength="18" id="p'+i+'" value="'+n+'">').join('')}
+function resetScores(){scores=[0,0,0,0,0];alert('Счёт сброшен.')}
+function startGame(){players=defaults.map((_,i)=>document.getElementById('p'+i).value.trim()||defaults[i]);scores=[0,0,0,0,0];let d=Math.max(10,Math.min(300,parseInt(document.getElementById('duration').value)||60));window.turnDuration=d;turn=0;used=[];show('game');nextTurn()}
+function show(id){['menu','game','finish'].forEach(x=>document.getElementById(x).classList.toggle('hidden',x!==id))}
+function pickWord(){if(used.length>=words.length)used=[];let available=words.map((w,i)=>i).filter(i=>!used.includes(i));let i=available[Math.floor(Math.random()*available.length)];used.push(i);return words[i]}
+function nextTurn(){clearInterval(interval);if(turn>=players.length){finishGame();return}remaining=window.turnDuration;current=pickWord();shown=false;document.getElementById('word').textContent='••••••••';document.getElementById('reveal').classList.remove('hidden');document.getElementById('hide').classList.add('hidden');document.getElementById('category').textContent='Слово увидит только объясняющий';document.getElementById('playerLabel').textContent=players[turn];document.getElementById('roundLabel').textContent='Ход '+(turn+1)+' из 5';updateTimer();renderScores();interval=setInterval(()=>{remaining--;updateTimer();if(remaining<=0){clearInterval(interval);endTurn()}},1000)}
+function updateTimer(){let m=Math.floor(remaining/60),s=remaining%60;document.getElementById('timer').textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')}
+function revealWord(){document.getElementById('word').textContent=current[0];document.getElementById('category').textContent='Категория: '+current[1];document.getElementById('reveal').classList.add('hidden');document.getElementById('hide').classList.remove('hidden')}
+function hideWord(){document.getElementById('word').textContent='••••••••';document.getElementById('reveal').classList.remove('hidden');document.getElementById('hide').classList.add('hidden');document.getElementById('category').textContent='Слово скрыто'}
+function correct(){scores[turn]++;renderScores();endTurn()}
+function skip(){current=pickWord();if(shown){document.getElementById('word').textContent=current[0];document.getElementById('category').textContent='Категория: '+current[1]} }
+function endTurn(){clearInterval(interval);turn++;nextTurn()}
+function renderScores(){document.getElementById('scoreList').innerHTML=players.map((p,i)=>'<div class="player"><span class="num">'+(i+1)+'</span><span>'+escapeHtml(p)+'</span><span class="score">'+scores[i]+'</span></div>').join('')}
+function finishGame(){show('finish');let best=Math.max(...scores),w=players.filter((p,i)=>scores[i]===best).join(', ');document.getElementById('winner').textContent='Победитель: '+w;document.getElementById('finalScores').innerHTML=players.map((p,i)=>'<div class="player"><span>'+escapeHtml(p)+'</span><span class="score">'+scores[i]+' очк.</span></div>').join('')}
+function backToMenu(){clearInterval(interval);show('menu')}
+function escapeHtml(s){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+init();
+</script></body></html>
